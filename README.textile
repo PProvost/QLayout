@@ -1,0 +1,27 @@
+h2. Overview
+
+My own personal chatframe and worldframe layout. 
+
+As shown in the attached screenshot, there are four chat frames, locked into position, across the bottom of the screen. They are slim (85 pixels tall) and are arranged in the following pattern:
+
+|*Position*|*Width*|*Contents*|
+|Left|20%|System, Rolls, General, Say, etc|
+|Middle-left|30%|Guild, Officer, etc.|
+|Middle right|30%|Party, Raid, Battleground, etc|
+|Right|20%|Faction, skill, loot, XP, honor, etc.|
+
+Because this layout docks the chat frames at the bottom of the screen and locks them (making them unmoveable), you will also want to use an addon that lets you reposition the Edit box like Chatter, Prat or idChat.
+
+This layout was developed for my screen resolution (1680x1050), but can be made to work by editing QLayout.lua and changing the value of the SCREEN_WITH variable at the top of the file.
+
+Credits and thanks to Tekkub for tekLayout, which inspired this and provided a bunch of the code.
+
+h2. Uninstalling QLayout
+
+Since QLayout makes changes to your world and chat frame setup, there are steps you will need to perform after uninstalling the addon.
+
+# In game, enter the following into the edit box: /run WorldFrame:SetAllPoints()
+# Open Interface Options and choose Social in the list on the left
+# Check "Simple chat box"
+# Uncheck the "Lock Chat Settings"
+

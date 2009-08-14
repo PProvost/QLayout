@@ -1,0 +1,12 @@
+## Interface: 30200
+ 
+## Title: QLayout
+## Notes: My personal chat/world layout
+## Author: Quaiche
+## X-Category: Miscellaneous
+## X-License: Apache 2.0
+## OptionalDeps: tekDebug, tekErr
+ 
+QLayout.lua
+
+
