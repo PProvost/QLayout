@@ -32,7 +32,7 @@ local groups = {
   [ChatFrame1] = {"SYSTEM", "SYSTEM_NOMENU", "SAY", "EMOTE", "CHANNEL", "MONSTER_SAY", "MONSTER_YELL", "MONSTER_EMOTE", "MONSTER_WHISPER", "MONSTER_BOSS_EMOTE", "MONSTER_BOSS_WHISPER", "ERRORS", "ACHIEVEMENT"},
 	[ChatFrame2] = {},
   [ChatFrame3] = {"GUILD", "GUILD_OFFICER", "GUILD_ACHIEVEMENT"},
-  [ChatFrame4] = {"WHISPER", "AFK", "DND", "IGNORED", "PARTY", "RAID", "RAID_LEADER", "BG_HORDE", "BG_ALLIANCE", "BG_NEUTRAL", "BATTLEGROUND", "BATTLEGROUND_LEADER"},
+  [ChatFrame4] = {"WHISPER", "AFK", "DND", "IGNORED", "PARTY", "PARTY_LEADER", "RAID_WARNING", "RAID", "RAID_LEADER", "BG_HORDE", "BG_ALLIANCE", "BG_NEUTRAL", "BATTLEGROUND", "BATTLEGROUND_LEADER"},
   [ChatFrame6] = {"COMBAT_FACTION_CHANGE", "SKILL", "LOOT", "MONEY", "COMBAT_XP_GAIN", "COMBAT_HONOR_GAIN", "COMBAT_MISC_INFO"},
 }
  
@@ -133,28 +133,3 @@ f:SetScript("OnEvent", function()
 
 end)
  
--- Thanks HASTE for the following hack to sneak n/N into the quest achievement tracker
--- Env. proxy. This way we most likely won't have to re-implement tons of stuff
--- every patch something changes.
-local env = setmetatable({
-	GetAchievementInfo = function(...)
-		if(select('#', ...) == 1) then
-			local id, name, points, completed, month, day, year, description, flags, icon, rewardText = GetAchievementInfo(...)
-
-			-- We might want to cache the following information, but who knows.
-			local numCriteria = GetAchievementNumCriteria(id)
-			local completed = 0
-			for i=1, numCriteria do
-				local _, _, criteriaCompleted = GetAchievementCriteriaInfo(id, i)
-				if(criteriaCompleted) then
-					completed = completed + 1
-				end
-			end
-
-			return id, ('%s [%d/%d]'):format(name, completed, numCriteria), points, completed, month, day, year, description, flags, icon, rewardText
-		end
-	end,
-}, {__index = _G})
-
-setfenv(WatchFrame_DisplayTrackedAchievements, env)
-
