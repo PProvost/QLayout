@@ -22,69 +22,55 @@ limitations under the License.
 -- CHANGE THIS VALUE TO MATCH YOUR GAME SCREEN RESOLUTION! 
 local SCREEN_WIDTH = 1680
 
-local VSIZE, GAP = 85, 6
+local SCALE, VSIZE, GAP = .85, 85, 6
 
+-- Layout looks like this [ ChatFrame1 ][    ChatFrame3    ][    ChatFrame4    ][ ChatFrame6 ]
+local HSIZE_BIG = SCREEN_WIDTH * SCALE * 0.3 -- 30%
+local HSIZE_SMALL = SCREEN_WIDTH * SCALE * 0.2 -- 20%
+ 
 local groups = {
-  [ChatFrame1] = {"SYSTEM", "SYSTEM_NOMENU", "SAY", "EMOTE", "CHANNEL", "MONSTER_SAY", "MONSTER_YELL", "MONSTER_EMOTE", "MONSTER_WHISPER", "MONSTER_BOSS_EMOTE", "MONSTER_BOSS_WHISPER", "ERRORS", "ACHIEVEMENT", "COMBAT_FACTION_CHANGE", "SKILL", "LOOT", "MONEY", "COMBAT_XP_GAIN", "COMBAT_HONOR_GAIN", "COMBAT_MISC_INFO"},
-  [ChatFrame3] = {"GUILD", "OFFICER", "GUILD_OFFICER", "GUILD_ACHIEVEMENT"},
+  [ChatFrame1] = {"SYSTEM", "SYSTEM_NOMENU", "SAY", "EMOTE", "CHANNEL", "MONSTER_SAY", "MONSTER_YELL", "MONSTER_EMOTE", "MONSTER_WHISPER", "MONSTER_BOSS_EMOTE", "MONSTER_BOSS_WHISPER", "ERRORS", "ACHIEVEMENT"},
+	[ChatFrame2] = {},
+  [ChatFrame3] = {"GUILD", "OFFICER", "GUILD_ACHIEVEMENT"},
   [ChatFrame4] = {"WHISPER", "AFK", "DND", "IGNORED", "PARTY", "PARTY_LEADER", "RAID_WARNING", "RAID", "RAID_LEADER", "BG_HORDE", "BG_ALLIANCE", "BG_NEUTRAL", "BATTLEGROUND", "BATTLEGROUND_LEADER"},
+  [ChatFrame6] = {"COMBAT_FACTION_CHANGE", "SKILL", "LOOT", "MONEY", "COMBAT_XP_GAIN", "COMBAT_HONOR_GAIN", "COMBAT_MISC_INFO"},
 }
-
-local function hide(self)
-	if not self.override then
-		self:Hide()
-	end
-	self.override = nil
-end
-
-local function noop()
-	-- Do nothing!!
-end
-
+ 
 local function SetupFrame(frame, h, w, r, g, b, a, ...)
   local id = frame:GetID()
  
 	-- Undock this frame
   if frame ~= ChatFrame1 then
-		FCF_UnDockFrame(frame);
-    -- for i,v in pairs(DOCKED_CHAT_FRAMES) do if v == frame then table.remove(DOCKED_CHAT_FRAMES, i) end end
+    SetChatWindowDocked(id, nil)
+		-- This isn't quite right... it doesn't seem to undock properly (e.g. remove the docked tab)
+    for i,v in pairs(DOCKED_CHAT_FRAMES) do if v == frame then table.remove(DOCKED_CHAT_FRAMES, i) end end
+    frame.isDocked = nil
+    frame.isLocked = nil
+    SetChatWindowLocked(id, nil)
+		FCF_UnDockFrame(frame)
   end
-
-	frame:SetClampRectInsets(0, 0, 0, 0)
-
-	ff = _G[frame:GetName() .. "Tab"]
-	ff:Hide()
-	ff:SetScript("OnShow", hide)
-
+ 
 	-- Set the position and size
   frame:ClearAllPoints()
-	frame:SetMinResize(w,h)
-	frame:SetMaxResize(w,h)
   frame:SetPoint(...)
   frame:SetHeight(h)
   frame:SetWidth(w)
   frame:Show()
-	frame:SetUserPlaced()
+	frame.Hide = function() end
  
 	-- Set the BG color
   FCF_SetWindowColor(frame, r/255, g/255, b/255)
   FCF_SetWindowAlpha(frame, a/255)
- 
+
 	-- Set the font
   local font, _, flags = frame:GetFont()
   frame:SetFont(font, 11, flags)
-  -- SetChatWindowSize(id, 11)
-
-	FCF_SetLocked(frame, true)
+  SetChatWindowSize(id, 11)
  
 	-- Setup the channels for this frame
   ChatFrame_RemoveAllChannels(frame)
   ChatFrame_RemoveAllMessageGroups(frame)
   for i,v in pairs(groups[frame]) do ChatFrame_AddMessageGroup(frame, v) end
-
-	-- Lock it in place
-	FCF_SetLocked(frame, 1)
-
 end
 
 local function makeMovable(frame)
@@ -113,53 +99,47 @@ f:SetScript("OnEvent", function()
  
   -- Seems Wrath likes to undo scale from time to time
   SetCVar("useUiScale", 1)
-  SetCVar("UISCALE", 0.85)
+  SetCVar("UISCALE", SCALE)
  
-	-- Editbox
-	ChatFrame1EditBox:ClearAllPoints()
-	ChatFrame1EditBox.ClearAllPoints = function() end
-	ChatFrame1EditBox:SetPoint("CENTER", WorldFrame)
-	ChatFrame1EditBox.SetPoint = function() end
-	ChatFrame1EditBox:SetWidth(300)
+  -- Hide those stupid dock thingies that show up on load for a moment
+  -- for i=1,7 do _G["ChatFrame"..i.."TabDockRegionHighlight"]:Hide() end
 
+	-- Force raid coloring on all channels
+	for i,v in pairs(CHAT_CONFIG_CHAT_LEFT) do ToggleChatColorNamesByClassGroup(true, v.type) end
+
+	print("*** GAP: " .. GAP .. " ***")
 
 	-- Setup our frames
-	--[[
-  SetupFrame(ChatFrame1, 240, 200, 51, 51, 51, 64, "TOPRIGHT", UIParent, "TOPRIGHT", 28, -20)
-  SetupFrame(ChatFrame3, 312, 200, 5, 70, 6, 64, "TOPRIGHT", ChatFrame1, "BOTTOMRIGHT", 0, -10)
-  SetupFrame(ChatFrame4, 311, 200, 81, 14, 68, 64, "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 28)
-	]]
+  SetupFrame(ChatFrame1, VSIZE, HSIZE_SMALL, 51, 51, 51, 64, "BOTTOMLEFT", UIParent, GAP/2, GAP)
+	-- SetupFrame(ChatFrame2, 100, 350, 32, 32, 32, 128, "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -5, 105)
+  SetupFrame(ChatFrame3, VSIZE, HSIZE_BIG, 5, 70, 6, 64, "TOPLEFT", ChatFrame1, "TOPRIGHT", GAP, 0)
+  SetupFrame(ChatFrame4, VSIZE, HSIZE_BIG, 81, 14, 68, 64, "TOPLEFT", ChatFrame3, "TOPRIGHT", GAP, 0)
+  SetupFrame(ChatFrame6, VSIZE, HSIZE_SMALL, 39, 65, 68, 64, "TOPLEFT", ChatFrame4, "TOPRIGHT", GAP, 0)
 
-  SetupFrame(ChatFrame3, 312, 200, 5, 70, 6, 64, "TOPRIGHT", UIParent, "TOPRIGHT", 28, -20)
-  SetupFrame(ChatFrame4, 311, 200, 81, 14, 68, 64, "TOPRIGHT", ChatFrame3, "BOTTOMRIGHT", 0, -10)
-  SetupFrame(ChatFrame1, 240, 200, 65, 27, 0, 64, "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 28)
-	-- 65, 27, 0
-	-- 51, 51, 51
+	FCF_Close(ChatFrame5)
+	FCF_Close(ChatFrame7)
 
-	-- Combat log
-	FCF_UnDockFrame(ChatFrame2);
-	FCF_SetLocked(ChatFrame2, nil)
-	ChatFrame2:ClearAllPoints()
-	ChatFrame2:SetPoint("BOTTOMRIGHT", WorldFrame, "BOTTOMRIGHT", -15, 15 )
-	ChatFrame2:Hide()
-	ChatFrame2Tab:Hide()
+	--[[ FCF_SetLocked(ChatFrame1, true)
+	-- FCF_SetLocked(ChatFrame2, true)
+	FCF_SetLocked(ChatFrame3, true)
+	FCF_SetLocked(ChatFrame4, true)
+	FCF_SetLocked(ChatFrame6, true)
+]]
 
-	-- Watch frame
-	local wf = WatchFrame
-	local wfw, wfh = wf:GetWidth(), wf:GetHeight()
-	wf:ClearAllPoints()
-	wf.ClearAllPoints = function() end
-	wf:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 25, -20)
-	wf.SetPoint = function() end
-	wf:SetHeight(wfh)
-	wf:SetWidth(wfw)
-	WatchFrame_Update()
+	-- For some reason, Blizz keeps moving this damn thing
+  -- ChatFrame1.SetPoint = function() end
+  -- ChatFrame2.SetPoint = function() end
 
+	-- Hide the combat log frame
+	-- ChatFrame2:Hide()
+ 
  	-- Setup the world frame viewport
   WorldFrame:ClearAllPoints()
-  WorldFrame:SetUserPlaced()
-  WorldFrame:SetPoint("TOPLEFT", UIParent)
-  WorldFrame:SetPoint("BOTTOMRIGHT", UIParent, -173, 100)
+  -- WorldFrame:SetUserPlaced()
+  WorldFrame:SetPoint("TOP", UIParent)
+  WorldFrame:SetPoint("RIGHT", UIParent)
+  WorldFrame:SetPoint("LEFT", UIParent)
+  WorldFrame:SetPoint("BOTTOM", ChatFrame1, "TOP", 0, GAP/2)
 
 	-- Make the options frames movable
 	makeMovable(InterfaceOptionsFrame)
@@ -168,5 +148,13 @@ f:SetScript("OnEvent", function()
 	makeMovable(GameMenuFrame)
 	makeMovable(VideoOptionsFrame)
 
+	ChatFrame_AddChannel(ChatFrame3, "DBAOF")
+	ChatFrame_AddChannel(ChatFrame4, "ThugsRL09")
+	ChatFrame_AddChannel(ChatFrame4, "BTTank")
+	ChatFrame_AddChannel(ChatFrame4, "BTHealer")
+	ChatFrame_AddChannel(ChatFrame4, "BTLock")
+	ChatFrame_AddChannel(ChatFrame4, "BTPally")
+
 end)
  
+-- new
